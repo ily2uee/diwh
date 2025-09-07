@@ -1,4 +1,4 @@
-name = "hwid-checker"
+name = "diwh"
 main = "index.js"
 compatibility_date = "2025-09-07"
 
