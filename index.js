@@ -18,10 +18,10 @@ export default {
         );
       }
 
-      // Убираем пробелы вокруг и внутри hwid
-      hwid = String(hwid).trim();
+      // Убираем все пробелы из hwid
+      hwid = String(hwid).replace(/\s+/g, "");
 
-      // Приводим userId к строке
+      // Приводим userId к строке и убираем пробелы
       const userIdStr = String(userId).trim();
 
       const storedValue = await env.USERS.get(hwid);
