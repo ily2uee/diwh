@@ -15,32 +15,44 @@ export default {
         });
       }
 
-      // Проверяем, есть ли такой hwid в KV
       const storedValue = await env.USERS.get(hwid);
 
       if (!storedValue) {
-        // HWID не найден → отказ
+        // HWID не найден вообще
         return new Response(JSON.stringify({ success: false, error: "HWID not found" }), {
           status: 403,
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      // Если в KV только заглушка (например "pending"),
-      // то записываем туда userId (привязываем игрока)
       if (storedValue === "pending") {
+        // Первый раз — привязываем к userId
         await env.USERS.put(hwid, userId);
+        console.log(`HWID ${hwid} привязан к UserID ${userId}`);
         return new Response(JSON.stringify({ success: true, message: "HWID linked", userId }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      // Если уже привязан userId → просто возвращаем его
-      return new Response(JSON.stringify({ success: true, userId: storedValue }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      if (storedValue === userId) {
+        // Совпадает → доступ разрешён
+        console.log(`HWID ${hwid} успешно вошёл для UserID ${userId}`);
+        return new Response(JSON.stringify({ success: true, userId }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Если чужой userId пытается использовать этот HWID
+      console.warn(`ОШИБКА: HWID ${hwid} уже привязан к UserID ${storedValue}, а пытался войти ${userId}`);
+      return new Response(
+        JSON.stringify({ success: false, error: "HWID already linked to another user", realUserId: storedValue }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
     } catch (err) {
       return new Response(JSON.stringify({ success: false, error: err.message }), {
