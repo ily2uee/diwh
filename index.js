@@ -6,7 +6,7 @@ export default {
 
     try {
       const body = await request.json();
-      const { hwid, userId } = body;
+      let { hwid, userId } = body;
 
       if (!hwid || !userId) {
         return new Response(
@@ -18,8 +18,11 @@ export default {
         );
       }
 
+      // Убираем пробелы вокруг и внутри hwid
+      hwid = String(hwid).trim();
+
       // Приводим userId к строке
-      const userIdStr = String(userId);
+      const userIdStr = String(userId).trim();
 
       const storedValue = await env.USERS.get(hwid);
 
