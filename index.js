@@ -9,56 +9,83 @@ export default {
       const { hwid, userId } = body;
 
       if (!hwid || !userId) {
-        return new Response(JSON.stringify({ success: false, error: "Missing hwid or userId" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing hwid or userId" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
+
+      // Приводим userId к строке
+      const userIdStr = String(userId);
 
       const storedValue = await env.USERS.get(hwid);
 
       if (!storedValue) {
-        // HWID не найден вообще
-        return new Response(JSON.stringify({ success: false, error: "HWID not found" }), {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        });
+        // HWID не найден
+        return new Response(
+          JSON.stringify({ success: false, error: "HWID not found" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
 
       if (storedValue === "pending") {
-        // Первый раз — привязываем к userId
-        await env.USERS.put(hwid, userId);
-        console.log(`HWID ${hwid} привязан к UserID ${userId}`);
-        return new Response(JSON.stringify({ success: true, message: "HWID linked", userId }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
+        // Первый раз — привязываем HWID к userId
+        await env.USERS.put(hwid, userIdStr);
+        console.log(`HWID ${hwid} привязан к UserID ${userIdStr}`);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "HWID linked",
+            userId: userIdStr,
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
 
-      if (storedValue === userId) {
+      if (storedValue === userIdStr) {
         // Совпадает → доступ разрешён
-        console.log(`HWID ${hwid} успешно вошёл для UserID ${userId}`);
-        return new Response(JSON.stringify({ success: true, userId }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
+        console.log(`HWID ${hwid} успешно вошёл для UserID ${userIdStr}`);
+        return new Response(
+          JSON.stringify({ success: true, userId: userIdStr }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
 
-      // Если чужой userId пытается использовать этот HWID
-      console.warn(`ОШИБКА: HWID ${hwid} уже привязан к UserID ${storedValue}, а пытался войти ${userId}`);
+      // Если чужой userId пытается использовать HWID
+      console.warn(
+        `ОШИБКА: HWID ${hwid} уже привязан к UserID ${storedValue}, а пытался войти ${userIdStr}`
+      );
       return new Response(
-        JSON.stringify({ success: false, error: "HWID already linked to another user", realUserId: storedValue }),
+        JSON.stringify({
+          success: false,
+          error: "HWID already linked to another user",
+          realUserId: storedValue,
+        }),
         {
           status: 403,
           headers: { "Content-Type": "application/json" },
         }
       );
-
     } catch (err) {
-      return new Response(JSON.stringify({ success: false, error: err.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ success: false, error: err.message }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
   },
 };
